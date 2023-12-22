@@ -1,16 +1,19 @@
-import ResultEntry from "../components/ResultEntry";
+import { useState } from "react";
 
 import Col from "react-bootstrap/Col";
 import Nav from "react-bootstrap/Nav";
 import Row from "react-bootstrap/Row";
 import Tab from "react-bootstrap/Tab";
 
+import { Background, BackgroundVariant, ReactFlow } from "reactflow";
 import { oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 
-import { Background, BackgroundVariant, ReactFlow } from "reactflow";
 import "reactflow/dist/style.css";
 import "./style.css";
+
+import ResultEntry from "../components/ResultEntry";
+import SearchBox from "../components/SearchBox";
 
 const ResultsTab = () => {
   const id = "Q71";
@@ -107,9 +110,19 @@ const IRTab = () => {
 };
 
 const ResultsPage = () => {
+  const [search, setSearch] = useState(
+    "Who is the current president of the US?"
+  );
   return (
     <div style={{ width: "90%", paddingTop: "5%", paddingLeft: "10%" }}>
-      <h1>Who is the current president of the US?</h1>
+      {/*<h1>Who is the current president of the US?</h1>*/}
+      <SearchBox
+        search={search}
+        onUpdateSearch={setSearch}
+        textAlign="left"
+        autoFocus={false}
+        showStatus={false}
+      />
       <div
         style={{
           backgroundColor: "rgb(33, 195, 84, 0.1)",
