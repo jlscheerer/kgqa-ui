@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type SearchBoxProps = {
   textAlign: "center" | "left";
@@ -10,9 +10,53 @@ type SearchBoxProps = {
 
 const SearchBox = (props: SearchBoxProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const [rstatus, setRStatus] = useState(
+    "Generating Intermediate Representation"
+  );
   const [status, setStatus] = useState("");
+
   const [progressType, setProgressType] = useState("");
+  const [uuid, setUUID] = useState("");
   const [submit, setSubmit] = useState(false);
+
+  const remoteUpdateStatus = async () => {
+    if (uuid !== "") {
+      const response = await fetch(
+        "http://127.0.0.1:5000/search/status?" +
+          new URLSearchParams({ uuid: uuid }).toString()
+      ).then((response) => response.json());
+      if (response["status"] === "Done") {
+        setRStatus("Generating Intermediate Representation");
+        setStatus("");
+        setProgressType("");
+        setUUID("");
+        setSubmit(false);
+        window.location.href =
+          "results?" + new URLSearchParams({ uuid: uuid }).toString();
+      } else if (response["status"] !== rstatus) {
+        setRStatus(response["status"]);
+        setProgressType("fade");
+        setTimeout(() => {
+          setProgressType("show");
+          setStatus(response["status"]);
+        }, 1000);
+      }
+    }
+  };
+
+  const remoteSubmitQuery = async () => {
+    const response = await fetch(
+      "http://127.0.0.1:5000/search/query?" +
+        new URLSearchParams({ query: props.search }).toString()
+    ).then((response) => response.json());
+    setUUID(response["uuid"]);
+  };
+
+  useEffect(() => {
+    const interval = setInterval(remoteUpdateStatus, 250);
+    return () => clearInterval(interval);
+  }, [uuid, rstatus]);
 
   const onSearchChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
     const newSearch = event.target.value;
@@ -21,7 +65,8 @@ const SearchBox = (props: SearchBoxProps) => {
 
   const onPerformSearch = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
-      setStatus("Parsing Query");
+      remoteSubmitQuery();
+      setStatus("Generating Intermediate Representation");
       setSubmit(true);
     }
   };
@@ -59,11 +104,11 @@ const SearchBox = (props: SearchBoxProps) => {
     props.textAlign === "center"
       ? {
           position: "absolute",
-          top: "25%",
+          top: "23%",
           transform: "translateY(-50%)",
           right: "5px",
           zIndex: 5,
-          left: inputRectLeft + 1.15 * textWidth + 495 + "px",
+          left: inputRectLeft + 1.2 * textWidth + 495 + "px",
         }
       : {
           position: "relative",

@@ -38,25 +38,11 @@ const SearchPage = () => {
         />
       </div>
       <div style={copyrightStyle}>
-        KGIR: Semantic Query Answering with Natural Language on Knowledge Graphs
+        QirK: Query Answering via Intermediate Representation on Knowledge
+        Graphs
       </div>
     </div>
   );
 };
-/*
-componentDidUpdate() {
-  if (this.props.args["status"] !== this.state.status) {
-    this.setState({
-      progressStyle: "fade",
-    });
-    setTimeout(() => {
-      this.setState((_) => ({
-        progressStyle: "show",
-        status: this.props.args["status"],
-      }));
-    }, 1000);
-  }
-}
-*/
 
 export default SearchPage;

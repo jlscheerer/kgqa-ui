@@ -13,9 +13,11 @@ type PropertyInfoProps = {
 
 const PropertyInfo = (props: PropertyInfoProps) => {
   return (
-    <div style={{ height: "60px", marginBottom: "8px" }}>
+    <div style={{ marginBottom: "8px" }}>
       <div
         style={{
+          paddingTop: "5px",
+          paddingLeft: "5px",
           height: "100%",
           width: "100%",
           border: "2px solid #FBFBFB",
@@ -24,7 +26,7 @@ const PropertyInfo = (props: PropertyInfoProps) => {
           // boxShadow: "0px 4px 3px 0px #F3F3F3",
         }}
       >
-        <div style={{ padding: "10px" }}>
+        <div style={{ padding: "10px", paddingBottom: "0" }}>
           <div
             style={{
               display: "flex",
@@ -48,7 +50,7 @@ const PropertyInfo = (props: PropertyInfoProps) => {
                 <p
                   style={{
                     fontWeight: "leighter",
-                    fontSize: "0.3rem",
+                    fontSize: "0.5rem",
                     margin: "0",
                   }}
                 >
@@ -57,7 +59,7 @@ const PropertyInfo = (props: PropertyInfoProps) => {
                     style={{
                       backgroundColor: "#F1E9E4",
                       borderRadius: "4px",
-                      fontSize: "0.25rem",
+                      fontSize: "0.45rem",
                       padding: "0px 7px 0 5px",
                       fontWeight: "leighter",
                     }}

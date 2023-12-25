@@ -1,11 +1,21 @@
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import Col from "react-bootstrap/Col";
 import Nav from "react-bootstrap/Nav";
 import Row from "react-bootstrap/Row";
 import Tab from "react-bootstrap/Tab";
 
-import { Background, BackgroundVariant, ReactFlow } from "reactflow";
+import { format as sqlFormat } from "sql-formatter";
+import sparqlFormat from "sparql-formatter";
+
+import {
+  Background,
+  BackgroundVariant,
+  Handle,
+  Position,
+  ReactFlow,
+} from "reactflow";
 import { oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 
@@ -15,69 +25,82 @@ import "./style.css";
 import ResultEntry from "../components/ResultEntry";
 import SearchBox from "../components/SearchBox";
 
-const ResultsTab = () => {
-  const id = "Q71";
-  const title = "Barack Obama";
-  const description = "president of the United States from 2009 to 2017";
-  const score = "1.00";
-  const scoreColor = "#E3EDD5";
-  const image =
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/President_Barack_Obama.jpg/192px-President_Barack_Obama.jpg";
-  const opacity = "100";
-  const link = "entity?id=Q76";
-  const derivation = "president_of ↦ head_of_government (0.71)";
+type ResultInfo = {
+  id: string;
+  title: string;
+  description: string;
+  score: string;
+  scoreColor: string;
+  image: string;
+  opacity: string;
+  link: string;
+  derivation: string;
+};
 
+const ResultsTab = (props: { results: [ResultInfo] }) => {
   return (
     <>
-      <ResultEntry
-        id={id}
-        title={title}
-        description={description}
-        score={score}
-        scoreColor={scoreColor}
-        image={image}
-        opacity={opacity}
-        link={link}
-        derivation={derivation}
-      />
-      <ResultEntry
-        id={id}
-        title={title}
-        description={description}
-        score="0.82"
-        scoreColor="#FBE7CD"
-        image={image}
-        opacity="82"
-        link={link}
-        derivation={derivation}
-      />
+      {props.results.map((result) => (
+        <ResultEntry
+          id={result.id}
+          title={result.title}
+          description={result.description}
+          score={result.score}
+          scoreColor={result.scoreColor}
+          image={result.image}
+          opacity={result.opacity}
+          link={result.link}
+          derivation={result.derivation}
+        />
+      ))}
     </>
   );
 };
 
-const QueryGraphTab = () => {
-  const initialNodes = [
-    { id: "1", position: { x: 0, y: 0 }, data: { label: "1" }, type: "input" },
-    {
-      id: "2",
-      position: { x: 0, y: 100 },
-      data: { label: "2" },
-      type: "output",
-    },
-  ];
-  const initialEdges = [
-    { id: "e1-2", source: "1", target: "2", label: "something" },
-  ];
+/*
+const handleStyle = { left: 10 };
+const QGVariableNode = ({ data, isConnectable }) => {
+  const onChange = useCallback((evt) => {
+    console.log(evt.target.value);
+  }, []);
+  return (
+    <div className="text-updater-node">
+      <div>
+        <input id="text" name="text" onChange={onChange} className="nodrag" />
+      </div>
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="a"
+        style={handleStyle}
+        isConnectable={isConnectable}
+      />
+      <Handle
+        type="target"
+        position={Position.Bottom}
+        isConnectable={isConnectable}
+      />
+    </div>
+  );
+};
+*/
 
+type QueryGraphTabProps = {
+  graph: { nodes: any; edges: any };
+};
+
+const QueryGraphTab = (props: QueryGraphTabProps) => {
+  // const nodeTypes = useMemo(() => ({ variableNode: QGVariableNode }), []);
   return (
     <div
       style={{ border: "1px solid #F1E9E4", width: "100%", height: "500px" }}
     >
       <ReactFlow
-        nodes={initialNodes}
-        edges={initialEdges}
+        nodes={props.graph.nodes}
+        edges={props.graph.edges}
         edgesUpdatable={false}
         nodesConnectable={false}
+        // nodeTypes={nodeTypes}
       >
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
       </ReactFlow>
@@ -98,24 +121,54 @@ const CodeTab = (props: CodeTabProps) => {
   );
 };
 
-const IRTab = () => {
+type IRTabProps = {
+  code: string;
+};
+
+const IRTab = (props: IRTabProps) => {
   return (
     <>
       <p>
         <b>Intermediate Representation (QirK)</b>
       </p>
-      <CodeTab code="X: president(X)" language="none" />
+      <CodeTab code={props.code} language="none" />
     </>
   );
 };
 
 const ResultsPage = () => {
-  const [search, setSearch] = useState(
-    "Who is the current president of the US?"
+  const [searchParams, _] = useSearchParams();
+  const uuid = searchParams.get("uuid");
+
+  const [search, setSearch] = useState("");
+  const [time, setTime] = useState("");
+  const [results, setResults] = useState<[ResultInfo]>(
+    [] as unknown as [ResultInfo]
   );
+  const [QirK, setQirK] = useState("");
+  const [graph, setGraph] = useState<any>({ nodes: [], edges: [] });
+  const [sparql, setSparql] = useState("");
+  const [sql, setSql] = useState("");
+
+  const remoteFetchQueryResults = async () => {
+    const response = await fetch(
+      "http://127.0.0.1:5000/search/results?" +
+        new URLSearchParams({ uuid: uuid! }).toString()
+    ).then((response) => response.json());
+    setSearch(response["query"]);
+    setResults(response["results"]);
+    setTime(response["time"]);
+    setQirK(response["QirK"]);
+    setGraph(response["graph"]);
+    setSparql(response["SPARQL"]);
+    setSql(response["SQL"]);
+    document.title = response["query"] + " - QirK";
+  };
+  useEffect(() => {
+    remoteFetchQueryResults();
+  }, []);
   return (
     <div style={{ width: "90%", paddingTop: "5%", paddingLeft: "10%" }}>
-      {/*<h1>Who is the current president of the US?</h1>*/}
       <SearchBox
         search={search}
         onUpdateSearch={setSearch}
@@ -140,7 +193,8 @@ const ResultsPage = () => {
             color: "rgb(23, 114, 51)",
           }}
         >
-          Retrieved query results and relative scores. 27 results (5 seconds)
+          Retrieved query results and relative scores. {results.length} result
+          {results.length === 1 ? "" : "s"} ({time})
         </p>
       </div>
       <Tab.Container id="left-tabs-example" defaultActiveKey="results">
@@ -180,19 +234,19 @@ const ResultsPage = () => {
           <Col>
             <Tab.Content>
               <Tab.Pane eventKey="results">
-                <ResultsTab />
+                <ResultsTab results={results} />
               </Tab.Pane>
               <Tab.Pane eventKey="ir">
-                <IRTab />
+                <IRTab code={QirK} />
               </Tab.Pane>
               <Tab.Pane eventKey="graph">
-                <QueryGraphTab />
+                <QueryGraphTab graph={graph} />
               </Tab.Pane>
               <Tab.Pane eventKey="sparql">
-                <CodeTab code="SELECT ?X WHERE {}" language="sparql" />
+                <CodeTab code={sparqlFormat(sparql)} language="sparql" />
               </Tab.Pane>
               <Tab.Pane eventKey="sql">
-                <CodeTab code="SELECT * FROM customers" language="sql" />
+                <CodeTab code={sqlFormat(sql)} language="sql" />
               </Tab.Pane>
             </Tab.Content>
           </Col>

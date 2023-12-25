@@ -36,15 +36,17 @@ const ResultEntry = (props: ResultEntryProps) => {
               gap: "10px",
             }}
           >
-            <img
-              style={{
-                borderRadius: "10px",
-                height: "60px",
-                width: "60px",
-                objectFit: "cover",
-              }}
-              src={props.image}
-            />
+            {props.image != null && (
+              <img
+                style={{
+                  borderRadius: "10px",
+                  height: "60px",
+                  width: "60px",
+                  objectFit: "cover",
+                }}
+                src={props.image}
+              />
+            )}
             <div
               style={{
                 display: "flex",
