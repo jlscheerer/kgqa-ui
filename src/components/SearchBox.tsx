@@ -84,12 +84,18 @@ const SearchBox = (props: SearchBoxProps) => {
 
   const searchFieldStyle: React.CSSProperties = {
     fontSize: "25px",
-    width: "80vw",
+    width: "100vw",
     textAlign: props.textAlign,
-    marginBottom: "15px",
     border: "none",
     outline: "none",
+    padding: 0,
+    margin: 0,
     caretColor: props.search.length > 0 ? "" : "transparent",
+  };
+
+  const searchFieldTextStyle: React.CSSProperties = {
+    ...searchFieldStyle,
+    width: undefined,
   };
 
   const searchFieldElementsStyle: React.CSSProperties = {
@@ -97,25 +103,15 @@ const SearchBox = (props: SearchBoxProps) => {
     flexDirection: "row",
   };
 
-  const inputRectLeft = inputRef.current?.getBoundingClientRect()?.left ?? 0;
-  const textWidth = getSearchTextWidth();
-
-  const loadingStyle: React.CSSProperties =
-    props.textAlign === "center"
-      ? {
-          position: "absolute",
-          top: "23%",
-          transform: "translateY(-50%)",
-          right: "5px",
-          zIndex: 5,
-          left: inputRectLeft + 1.2 * textWidth + 495 + "px",
-        }
-      : {
-          position: "relative",
-          zIndex: 5,
-          left: -1170 + 2.47 * textWidth + "px",
-          top: "15px",
-        };
+  const loadingStyle: React.CSSProperties = {
+    position: "relative",
+    top: "14px",
+    left: "38px",
+    zIndex: 10,
+    float: "left",
+    flexShrink: 0,
+    marginLeft: "-10px",
+  };
 
   const progressStyle: React.CSSProperties = {
     color: "#666",
@@ -126,20 +122,28 @@ const SearchBox = (props: SearchBoxProps) => {
   return (
     <>
       <div style={searchFieldElementsStyle}>
-        <input
-          ref={inputRef}
-          id="inputField"
-          placeholder="What would you like to know? Ask here and press Enter &#8629;"
-          type="text"
-          style={searchFieldStyle}
-          autoFocus={props.autoFocus}
-          onChange={(event) => onSearchChange(event)}
-          onKeyDown={(event) => onPerformSearch(event)}
-          value={props.search}
-          readOnly={submit}
-          autoComplete="off"
-          autoCorrect="false"
-        />
+        {!submit ? (
+          <input
+            ref={inputRef}
+            id="inputField"
+            placeholder={
+              props.textAlign === "center"
+                ? "What would you like to know? Ask here and press Enter ↵"
+                : ""
+            }
+            type="text"
+            style={searchFieldStyle}
+            autoFocus={props.autoFocus}
+            onChange={(event) => onSearchChange(event)}
+            onKeyDown={(event) => onPerformSearch(event)}
+            value={props.search}
+            readOnly={submit}
+            autoComplete="off"
+            autoCorrect="false"
+          />
+        ) : (
+          <p style={searchFieldTextStyle}>{props.search}</p>
+        )}
         <div style={loadingStyle} hidden={!submit}>
           <div className="col-3">
             <div className="snippet" data-title="dot-pulse">
