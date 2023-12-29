@@ -38,7 +38,7 @@ const SearchPage = () => {
         />
       </div>
       <div style={copyrightStyle}>
-        QirK: Query Answering via Intermediate Representation on Knowledge
+        QirK: Question Answering via Intermediate Representation on Knowledge
         Graphs
       </div>
     </div>

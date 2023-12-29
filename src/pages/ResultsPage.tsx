@@ -25,65 +25,61 @@ import "./style.css";
 import ResultEntry from "../components/ResultEntry";
 import SearchBox from "../components/SearchBox";
 
-type ResultInfo = {
+type ResultHeadInfo = {
   id: string;
+  type: "entity_id" | "date" | "string" | "numeric";
+  variable: string;
   title: string;
   description: string;
+  image: string;
+  link: string;
+};
+
+type ResultInfo = {
+  head: [ResultHeadInfo];
   score: string;
   scoreColor: string;
-  image: string;
   opacity: string;
-  link: string;
   derivation: string;
 };
 
-const ResultsTab = (props: { results: [ResultInfo] }) => {
-  return (
-    <>
-      {props.results.map((result) => (
-        <ResultEntry
-          id={result.id}
-          title={result.title}
-          description={result.description}
-          score={result.score}
-          scoreColor={result.scoreColor}
-          image={result.image}
-          opacity={result.opacity}
-          link={result.link}
-          derivation={result.derivation}
-        />
-      ))}
-    </>
-  );
+type GroupedResultInfo = {
+  derivation: string;
+  results: [ResultInfo];
 };
 
-/*
-const handleStyle = { left: 10 };
-const QGVariableNode = ({ data, isConnectable }) => {
-  const onChange = useCallback((evt) => {
-    console.log(evt.target.value);
-  }, []);
-  return (
-    <div className="text-updater-node">
-      <div>
-        <input id="text" name="text" onChange={onChange} className="nodrag" />
-      </div>
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        id="a"
-        style={handleStyle}
-        isConnectable={isConnectable}
-      />
-      <Handle
-        type="target"
-        position={Position.Bottom}
-        isConnectable={isConnectable}
-      />
-    </div>
+const ResultsTab = (props: { results: [GroupedResultInfo] }) => {
+  const results = useMemo(
+    () => (
+      <>
+        {props.results.map((result, index) => (
+          <>
+            <p
+              style={{
+                color: "gray",
+                fontWeight: "lighter",
+                fontSize: "0.8rem",
+                margin: index ? "20px 0px 4px 0px" : "0px 0px 4px 0px",
+              }}
+            >
+              {result.derivation}
+            </p>
+            {result.results.map((row) => (
+              <ResultEntry
+                head={row.head}
+                score={row.score}
+                scoreColor={row.scoreColor}
+                opacity={row.opacity}
+              />
+            ))}
+          </>
+        ))}
+      </>
+    ),
+    [props]
   );
+  return results;
 };
-*/
 
 type QueryGraphTabProps = {
   graph: { nodes: any; edges: any };
@@ -100,7 +96,6 @@ const QueryGraphTab = (props: QueryGraphTabProps) => {
         edges={props.graph.edges}
         edgesUpdatable={false}
         nodesConnectable={false}
-        // nodeTypes={nodeTypes}
       >
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
       </ReactFlow>
@@ -136,67 +131,22 @@ const IRTab = (props: IRTabProps) => {
   );
 };
 
-const ResultsPage = () => {
-  const [searchParams, _] = useSearchParams();
-  const uuid = searchParams.get("uuid");
+type ResultPageContentProps = {
+  results: [GroupedResultInfo];
+  QirK: string;
+  graph: any;
+  sparql: string;
+  sql: string;
+};
 
-  const [search, setSearch] = useState("");
-  const [time, setTime] = useState("");
-  const [results, setResults] = useState<[ResultInfo]>(
-    [] as unknown as [ResultInfo]
+const ResultPageContent = (props: ResultPageContentProps) => {
+  const formattedSparql = useMemo(
+    () => sparqlFormat(props.sparql),
+    [props.sparql]
   );
-  const [QirK, setQirK] = useState("");
-  const [graph, setGraph] = useState<any>({ nodes: [], edges: [] });
-  const [sparql, setSparql] = useState("");
-  const [sql, setSql] = useState("");
-
-  const remoteFetchQueryResults = async () => {
-    const response = await fetch(
-      "http://127.0.0.1:5000/search/results?" +
-        new URLSearchParams({ uuid: uuid! }).toString()
-    ).then((response) => response.json());
-    setSearch(response["query"]);
-    setResults(response["results"]);
-    setTime(response["time"]);
-    setQirK(response["QirK"]);
-    setGraph(response["graph"]);
-    setSparql(response["SPARQL"]);
-    setSql(response["SQL"]);
-    document.title = response["query"] + " - QirK";
-  };
-  useEffect(() => {
-    remoteFetchQueryResults();
-  }, []);
-  return (
-    <div style={{ width: "90%", paddingTop: "5%", paddingLeft: "10%" }}>
-      <SearchBox
-        search={search}
-        onUpdateSearch={setSearch}
-        textAlign="left"
-        autoFocus={false}
-        showStatus={false}
-      />
-      <div
-        style={{
-          backgroundColor: "rgb(33, 195, 84, 0.1)",
-          borderRadius: "10px",
-          padding: "10px",
-          display: "flex",
-          alignItems: "center",
-          marginBottom: "15px",
-        }}
-      >
-        <p
-          style={{
-            flex: 1,
-            margin: 0,
-            color: "rgb(23, 114, 51)",
-          }}
-        >
-          Retrieved query results and relative scores. {results.length} result
-          {results.length === 1 ? "" : "s"} ({time})
-        </p>
-      </div>
+  const formattedSql = useMemo(() => sqlFormat(props.sql), [props.sql]);
+  return useMemo(
+    () => (
       <Tab.Container id="left-tabs-example" defaultActiveKey="results">
         <Row>
           <Col>
@@ -234,24 +184,111 @@ const ResultsPage = () => {
           <Col>
             <Tab.Content>
               <Tab.Pane eventKey="results">
-                <ResultsTab results={results} />
+                <ResultsTab results={props.results} />
               </Tab.Pane>
               <Tab.Pane eventKey="ir">
-                <IRTab code={QirK} />
+                <IRTab code={props.QirK} />
               </Tab.Pane>
               <Tab.Pane eventKey="graph">
-                <QueryGraphTab graph={graph} />
+                <QueryGraphTab graph={props.graph} />
               </Tab.Pane>
               <Tab.Pane eventKey="sparql">
-                <CodeTab code={sparqlFormat(sparql)} language="sparql" />
+                <CodeTab code={formattedSparql} language="sparql" />
               </Tab.Pane>
               <Tab.Pane eventKey="sql">
-                <CodeTab code={sqlFormat(sql)} language="sql" />
+                <CodeTab code={formattedSql} language="sql" />
               </Tab.Pane>
             </Tab.Content>
           </Col>
         </Row>
       </Tab.Container>
+    ),
+    [props.sql]
+  );
+};
+
+const ResultsPage = () => {
+  const [searchParams, _] = useSearchParams();
+  const uuid = searchParams.get("uuid");
+
+  const [search, setSearch] = useState("");
+  const [time, setTime] = useState("");
+  const [results, setResults] = useState<[GroupedResultInfo]>(
+    [] as unknown as [GroupedResultInfo]
+  );
+  const [QirK, setQirK] = useState("");
+  const [graph, setGraph] = useState<any>({ nodes: [], edges: [] });
+  const [sparql, setSparql] = useState("");
+  const [sql, setSql] = useState("");
+
+  const remoteFetchQueryResults = async () => {
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:5000/search/results?" +
+          new URLSearchParams({ uuid: uuid! }).toString()
+      ).then((response) => response.json());
+      setSearch(response["query"]);
+      setResults(response["results"]);
+      setTime(response["time"]);
+      setQirK(response["QirK"]);
+      setGraph(response["graph"]);
+      setSparql(response["SPARQL"]);
+      setSql(response["SQL"]);
+      document.title = response["query"] + " - QirK";
+    } catch (error) {
+      // TODO(jlscheerer) Handle the error case here.
+    }
+  };
+  useEffect(() => {
+    remoteFetchQueryResults();
+  }, []);
+  const numResults = useMemo(
+    () => results.map((x) => x.results.length).reduce((x, y) => x + y, 0),
+    [results]
+  );
+  return (
+    <div style={{ width: "90%", paddingTop: "5%", paddingLeft: "10%" }}>
+      <SearchBox
+        search={search}
+        onUpdateSearch={setSearch}
+        textAlign="left"
+        autoFocus={false}
+        showStatus={false}
+      />
+      <div
+        style={{
+          backgroundColor: "rgb(33, 195, 84, 0.1)",
+          borderRadius: "10px",
+          padding: "10px",
+          display: "flex",
+          alignItems: "center",
+          marginBottom: "15px",
+        }}
+      >
+        <p
+          style={{
+            flex: 1,
+            margin: 0,
+            color: "rgb(23, 114, 51)",
+          }}
+        >
+          {search ? (
+            <>
+              Retrieved query results and relative scores. {numResults} result
+              {results.length === 1 ? "" : "s"} ({time})
+            </>
+          ) : (
+            <>Result Ready. Retrieving Data...</>
+          )}
+        </p>
+      </div>
+      <ResultPageContent
+        results={results}
+        QirK={QirK}
+        graph={graph}
+        sparql={sparql}
+        sql={sql}
+      />
     </div>
   );
 };
