@@ -25,6 +25,8 @@ import "./style.css";
 import ResultEntry from "../components/ResultEntry";
 import SearchBox from "../components/SearchBox";
 
+import { AutoSizer, List, InfiniteLoader } from "react-virtualized";
+
 type ResultHeadInfo = {
   id: string;
   type: "entity_id" | "date" | "string" | "numeric";
@@ -141,7 +143,7 @@ type ResultPageContentProps = {
 
 const ResultPageContent = (props: ResultPageContentProps) => {
   const formattedSparql = useMemo(
-    () => sparqlFormat(props.sparql),
+    () => sparqlFormat(props.sparql).replaceAll("&&", "\n              &&"),
     [props.sparql]
   );
   const formattedSql = useMemo(() => sqlFormat(props.sql), [props.sql]);
